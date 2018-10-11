@@ -70,6 +70,7 @@ var pageInfoType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+
 /*
 Returns a GraphQLObjectType for a connection with the given name,
 and whose nodes are of the specified type.
@@ -106,6 +107,14 @@ func ConnectionDefinitions(config ConnectionConfig) *GraphQLConnectionDefinition
 			},
 			"edges": &graphql.Field{
 				Type:        graphql.NewList(edgeType),
+				Description: "Information to aid in pagination.",
+			},
+			"nodes": &graphql.Field{
+				Type:        graphql.NewList(config.NodeType),
+				Description: "Information to aid in pagination.",
+			},
+			"totalCount": &graphql.Field{
+				Type:        graphql.Int,
 				Description: "Information to aid in pagination.",
 			},
 		},
