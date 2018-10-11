@@ -1,11 +1,14 @@
-package starwars
+package main
 
 import (
 	"errors"
 
 	"github.com/graphql-go/graphql"
-	"../../../relay"
+	"../../relay"
 	"golang.org/x/net/context"
+	"net/http"
+	"encoding/json"
+	"fmt"
 )
 
 /**
@@ -25,63 +28,63 @@ import (
  */
 
 /**
- * Using our shorthand to describe type systems, the type system for our
- * example will be the following:
- *
- * interface Node {
- *   id: ID!
- * }
- *
- * type Faction : Node {
- *   id: ID!
- *   name: String
- *   ships: ShipConnection
- * }
- *
- * type Ship : Node {
- *   id: ID!
- *   name: String
- * }
- *
- * type ShipConnection {
- *   edges: [ShipEdge]
- *   pageInfo: PageInfo!
- * }
- *
- * type ShipEdge {
- *   cursor: String!
- *   node: Ship
- * }
- *
- * type PageInfo {
- *   hasNextPage: Boolean!
- *   hasPreviousPage: Boolean!
- *   startCursor: String
- *   endCursor: String
- * }
- *
- * type Query {
- *   rebels: Faction
- *   empire: Faction
- *   node(id: ID!): Node
- * }
- *
- * input IntroduceShipInput {
- *   clientMutationID: string!
- *   shipName: string!
- *   factionId: ID!
- * }
- *
- * input IntroduceShipPayload {
- *   clientMutationID: string!
- *   ship: Ship
- *   faction: Faction
- * }
- *
- * type Mutation {
- *   introduceShip(input IntroduceShipInput!): IntroduceShipPayload
- * }
- */
+* Using our shorthand to describe type systems, the type system for our
+* example will be the following:
+*
+* interface Node {
+*   id: ID!
+* }
+*
+* type Faction : Node {
+*   id: ID!
+*   name: String
+*   ships: ShipConnection
+* }
+*
+* type Ship : Node {
+*   id: ID!
+*   name: String
+* }
+*
+* type ShipConnection {
+*   edges: [ShipEdge]
+*   pageInfo: PageInfo!
+* }
+*
+* type ShipEdge {
+*   cursor: String!
+*   node: Ship
+* }
+*
+* type PageInfo {
+*   hasNextPage: Boolean!
+*   hasPreviousPage: Boolean!
+*   startCursor: String
+*   endCursor: String
+* }
+*
+* type Query {
+*   rebels: Faction
+*   empire: Faction
+*   node(id: ID!): Node
+* }
+*
+* input IntroduceShipInput {
+*   clientMutationID: string!
+*   shipName: string!
+*   factionId: ID!
+* }
+*
+* input IntroduceShipPayload {
+*   clientMutationID: string!
+*   ship: Ship
+*   faction: Faction
+* }
+*
+* type Mutation {
+*   introduceShip(input IntroduceShipInput!): IntroduceShipPayload
+* }
+*/
 
 // declare definitions first, and initialize them in init() to break `initialization loop`
 // i.e.:
@@ -96,7 +99,7 @@ var factionType *graphql.Object
 // exported schema, defined in init()
 var Schema graphql.Schema
 
-func init() {
+func main() {
 
 	/**
 	 * We get the node interface and field from the relay library.
@@ -175,6 +178,13 @@ func init() {
 		NodeType: shipType,
 	})
 
+	//factionConnectionDefinition := relay.ConnectionDefinitions(relay.ConnectionConfig{
+	//	Name:     "Ship",
+	//	NodeType: factionType,
+	//})
+
+
+
 	/**
 	 * We define our faction type, which implements the node interface.
 	 *
@@ -234,6 +244,23 @@ func init() {
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
+			"factions": &graphql.Field{
+				Type: shipConnectionDefinition.ConnectionType,
+				Args: relay.ConnectionArgs,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					// convert args map[string]interface into ConnectionArguments
+					args := relay.NewConnectionArguments(p.Args)
+
+					fs := []interface{}{}
+					for _, v := range factions {
+						fs = append(fs, v)
+					}
+					// let relay library figure out the result, given
+					// - the list of ships for this faction
+					// - and the filter arguments (i.e. first, last, after, before)
+					return relay.ConnectionFromArray(fs, args), nil
+				},
+			},
 			"rebels": &graphql.Field{
 				Type: factionType,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -343,4 +370,23 @@ func init() {
 		// panic if there is an error in schema
 		panic(err)
 	}
+
+	http.HandleFunc("/graphql", func(w http.ResponseWriter, r *http.Request) {
+		result := executeQuery(r.URL.Query().Get("query"), Schema)
+		json.NewEncoder(w).Encode(result)
+	})
+
+	fmt.Println("Server is running on port 8080")
+	http.ListenAndServe(":8080", nil)
+}
+
+func executeQuery(query string, schema graphql.Schema) *graphql.Result {
+	result := graphql.Do(graphql.Params{
+		Schema:        schema,
+		RequestString: query,
+	})
+	if len(result.Errors) > 0 {
+		fmt.Printf("errors: %v", result.Errors)
+	}
+	return result
 }

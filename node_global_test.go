@@ -8,18 +8,23 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/testutil"
-	"github.com/graphql-go/relay"
+	"../relay"
 	"golang.org/x/net/context"
 )
+
+type user2 struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
 
 type photo2 struct {
 	PhotoId int `json:"photoId"`
 	Width   int `json:"width"`
 }
 
-var globalIDTestUserData = map[string]*user{
-	"1": &user{1, "John Doe"},
-	"2": &user{2, "Jane Smith"},
+var globalIDTestUserData = map[string]*user2{
+	"1": &user2{1, "John Doe"},
+	"2": &user2{2, "Jane Smith"},
 }
 var globalIDTestPhotoData = map[string]*photo2{
 	"1": &photo2{1, 300},
@@ -49,7 +54,7 @@ var globalIDTestDef = relay.NewNodeDefinitions(relay.NodeDefinitionsConfig{
 	},
 	TypeResolve: func(p graphql.ResolveTypeParams) *graphql.Object {
 		switch p.Value.(type) {
-		case *user:
+		case *user2:
 			return globalIDTestUserType
 		case *photo2:
 			return globalIDTestPhotoType

@@ -6,7 +6,7 @@ import (
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/graphql-go/graphql/language/location"
 	"github.com/graphql-go/graphql/testutil"
-	"github.com/graphql-go/relay"
+	"../relay"
 	"github.com/kr/pretty"
 	"reflect"
 	"testing"

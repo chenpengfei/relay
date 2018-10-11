@@ -10,7 +10,7 @@ import (
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/graphql-go/graphql/language/location"
 	"github.com/graphql-go/graphql/testutil"
-	"github.com/graphql-go/relay"
+	"../relay"
 	"golang.org/x/net/context"
 )
 
@@ -275,6 +275,7 @@ func TestNodeInterfaceAndFields_AllowsRefetching_ReturnsNullForBadIDs(t *testing
 			{
 				Message:   "Unknown node",
 				Locations: []location.SourceLocation{},
+				Path: []interface{}{"node"},
 			},
 		},
 	}
@@ -282,6 +283,7 @@ func TestNodeInterfaceAndFields_AllowsRefetching_ReturnsNullForBadIDs(t *testing
 		Schema:        nodeTestSchema,
 		RequestString: query,
 	})
+	result.Errors[0].Locations = []location.SourceLocation{}
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Fatalf("wrong result, graphql result diff: %v", testutil.Diff(expected, result))
