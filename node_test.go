@@ -10,7 +10,7 @@ import (
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/graphql-go/graphql/language/location"
 	"github.com/graphql-go/graphql/testutil"
-	"../relay"
+	"github.com/chenpengfei/relay"
 	"golang.org/x/net/context"
 )
 
