@@ -6,7 +6,7 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/testutil"
-	"github.com/chenpengfei/relay/starwars"
+	"github.com/chenpengfei/relay/examples/starwars"
 )
 
 func TestMutation_CorrectlyMutatesTheDataSet(t *testing.T) {
